@@ -105,6 +105,83 @@ namespace MemoryPool
     size_t MemoryPool::padPointer(char* p, size_t align) {
         return (align - reinterpret_cast<size_t>(p)) % align;
     }
+
+
+
+    bool MemoryPool::pushFreeList(Slot* slot) {
+        // Use CAD to implement lock-free queue operations;
+
+        // Example:
+        // Assume freeList_ (pointer) -> Slot1 (Free Slot)
+        // ThreafA and ThreadB;
+        // ThreadA: oldHead = Slot1; ThreadB: oldhead = Slot1;
+
+        // Firstly, ThreadA: SlotA -> next = oldHead (Slot1); ThreadB: SlotB -> next = oldHead (Slot1);
+        // Secondly, check if SlotA -> next == oldHead (Slot1), and update freeList_ -> SlotA;
+
+        // Now, threadB find SlotB -> next (oldHead (Slot1)) != SlotA
+        // ThreadB: update SlotB -> next = SlotA;
+        // Check SlotB -> next (oldHead (SlotA)) == SlotA, update freeList_ -> SlotB;
+
+        // Now freeList_ -> SlotB -> SlotA -> Slot1;
+        while (true) {
+
+            // Get current head node;
+            Slot* oldHead = freeList_.load(std::memory_order_relaxed);
+
+            // Set next node of current thread's head to oldHead;
+            slot -> next.store(oldHead, std::memory_order_relaxed);
+
+            if(freeList_.compare_exchange_weak(oldHead, slot, std::memory_order_release, std::memory_order_relaxed)) {
+                return true;
+            }
+
+            // If a thread fails
+            // Means another thread has already modified the first node;
+            // This thread needs to try again;
+        }
+    }
+
+
+    Slot* MemoryPool::popFreeList() {
+        // Use CAS to implement lock-free queue operations;
+
+        // Example:
+        // Assume freeList_ (pointer) -> Slot1 -> Slot2 -> Slot3;
+        // ThreafA and ThreadB;
+
+        // ThreadA: oldHead = Slot1; ThreadB: oldhead = Slot1;
+        // ThreadA: newHead = Slot2; ThreadB: newHead = Slot2;
+        // ThreadA: oldHead (Slot1) == freeList_ (pointer) -> Slot1;
+        // Update freeList_ -> Slot2 (newHead) -> Slot3;
+
+        // Now, threadB: oldHead (Slot1) != freeList_ (pointer) -> Slot2;
+        // ThreadB: update oldHead = Slot2; newHead = Slot3;
+        // ThreadB: oldHead (Slot2) == freeList_ (pointer) -> Slot2;
+        // Update freeList_ -> Slot3;
+
+        while(true) {
+
+            // Update current head node;
+            Slot* oldHead = freeList_.load(std::memory_order_relaxed);
+
+            if(oldHead == nullptr) {
+                return nullptr; // empty queue;
+            }
+
+            // Update the next node of the current head node;
+            Slot* newHead = oldHead->next.load(std::memory_order_relaxed);
+
+            // Compare the thread's oldHead with the freelist_;
+            if(freeList_.compare_exchange_weak(oldHead, newHead, std::memory_order_acquire, std::memory_order_relaxed)) {
+                return oldHead;
+            }
+
+            // If a thread fails
+            // Means another thread has already modified the first node;
+            // This thread needs to try again;
+        }
+    }
     
     
 
