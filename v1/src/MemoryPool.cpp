@@ -182,7 +182,17 @@ namespace MemoryPool
             // This thread needs to try again;
         }
     }
-    
-    
 
-}
+
+    void HashBucket::initMemoryPool() {
+        for(int i = 0; i < MEMORY_POOL_NUM; i++) {
+            getMemoryPool(i);
+        }
+    }
+
+    MemoryPool& HashBucket::getMemoryPool(int index) {
+        static MemoryPool memoryPool[MEMORY_POOL_NUM];
+        return memoryPool[index];
+    } 
+
+} // namespace MemoryPool

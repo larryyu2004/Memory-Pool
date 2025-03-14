@@ -44,4 +44,71 @@ namespace MemoryPool
         std::mutex mutexForBlock_;    // Prevent unnecessary memory blocks allocation in multiple threads;
     };
 
-}
+    class HashBucket 
+    {
+    public:
+        static void initMemoryPool();
+        static MemoryPool & getMemoryPool(int index);
+
+        static void *useMemory(size_t size)
+        {
+            if(size <= 0) {
+                return nullptr;
+            }
+            if(size > MAX_SLOT_SIZE) {
+                // If it needs to allocate >= 512 bytes, use new();
+                return operator new(size);
+            }
+
+            return getMemoryPool(((size + 7) / SLOT_BASE_SIZE) - 1).allocate();
+        }
+
+        static void freeMemory(void *ptr, size_t size) {
+            if (!ptr) {
+                return;
+            }
+
+            if(size > MAX_SLOT_SIZE) {
+                operator delete(ptr);
+                return;
+            }
+
+            getMemoryPool(((size + 7) / SLOT_BASE_SIZE) - 1).deallocate(ptr);
+        }
+
+        template <typename T, typename... Args>
+        friend T *newElement(Args &&...args);
+
+        template <typename T>
+        friend void deleteElement(T *p);
+    };
+
+    template <typename T, typename... Args>
+    T *newElement(Args &&... args)
+    {
+        T *p = nullptr;
+
+        // Allocate memory based on the size of the element;
+        if((p = reinterpret_cast<T *>(HashBucket::useMemory(sizeof(T))) != nullptr)) {
+
+            // Create an new object of type T;
+            new (p) T(std::forward<Args>(args)...);
+        }
+        
+        return p;
+    }
+
+
+    template <typename T>
+    void deleteElement(T *p)
+    {
+        if(p) {
+
+            // Here, p is a pointer to an object of type T;
+            // Deconstruct the object;
+            p->~T();
+            HashBucket::freeMemory(reinterpret_cast<void *>(p), sizeof(T));
+        }
+    }
+
+} // namespace MemoryPool
