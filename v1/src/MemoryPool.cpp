@@ -97,7 +97,7 @@ namespace MemoryPool
         curSlot_ = reinterpret_cast<Slot *>(body + paddingSize);
 
         // lastSlot = 0x1000 + 64 - 16 + 1 = 0x103F;
-        lastSlot_ = reinterpret_cast<Slot *>(newBlock) + BlockSize_ - SlotSize_ + 1; 
+        lastSlot_ = reinterpret_cast<Slot *>(reinterpret_cast<size_t>(newBlock)) + BlockSize_ - SlotSize_ + 1; 
 
         freeList_ = nullptr;
     }
@@ -186,7 +186,7 @@ namespace MemoryPool
 
     void HashBucket::initMemoryPool() {
         for(int i = 0; i < MEMORY_POOL_NUM; i++) {
-            getMemoryPool(i);
+            getMemoryPool(i).init((i+1) * SLOT_BASE_SIZE);
         }
     }
 
@@ -195,4 +195,4 @@ namespace MemoryPool
         return memoryPool[index];
     } 
 
-} // namespace MemoryPool
+} // namespace MemoryPool   

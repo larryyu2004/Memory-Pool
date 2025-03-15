@@ -77,6 +77,7 @@ namespace MemoryPool
         }
 
         template <typename T, typename... Args>
+        // A friend function or class can access private and protected members of the class that declared it as a friend;
         friend T *newElement(Args &&...args);
 
         template <typename T>
@@ -89,9 +90,10 @@ namespace MemoryPool
         T *p = nullptr;
 
         // Allocate memory based on the size of the element;
-        if((p = reinterpret_cast<T *>(HashBucket::useMemory(sizeof(T))) != nullptr)) {
+        if((p = reinterpret_cast<T *>(HashBucket::useMemory(sizeof(T)))) != nullptr) {
 
             // Create an new object of type T;
+            // p is the pointer points to the object T;
             new (p) T(std::forward<Args>(args)...);
         }
         
