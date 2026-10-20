@@ -1,0 +1,21 @@
+# CMake build directories and generated files
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+
+# Compiled files and debug symbols
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.exe
+*.dSYM/
+
+# macOS metadata
+.DS_Store
