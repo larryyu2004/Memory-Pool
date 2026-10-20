@@ -1,3 +1,8 @@
+#pragma once
+
+#include <atomic>
+#include <new>
+#include <utility>
 #include <cstddef> // For size_t
 #include <mutex>   // For std::mutex
 #include <cassert>  // For assert
